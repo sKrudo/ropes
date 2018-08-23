@@ -1,0 +1,12 @@
+name: RopesPlugin
+main: tld.sima.ropesplugin.Main
+version: 0.1
+author: Simon A
+description: A plugin that allows users to deploy ropes
+
+#commands:
+#  mobtool:
+#    description: Open up character sheet.
+#    usage: /mobtool
+#    permission: FrozenMobs.mobtool
+#    permission-message: You don't have the FrozenMobs.mobtool permission.
