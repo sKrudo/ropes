@@ -1,7 +1,8 @@
 package tld.sima.ropesplugin.events;
 
 import java.util.HashSet;
-import java.util.List;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -10,7 +11,8 @@ import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationFactory;
-import org.bukkit.entity.Entity;
+import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vex;
@@ -22,6 +24,7 @@ import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -31,6 +34,8 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import net.md_5.bungee.api.ChatColor;
+import net.minecraft.server.v1_13_R2.Entity;
+import net.minecraft.server.v1_13_R2.PacketPlayOutAttachEntity;
 import tld.sima.ropesplugin.Main;
 import tld.sima.ropesplugin.custominventory.CustomInventory;
 
@@ -38,27 +43,29 @@ public class EventsManager implements Listener {
 	
 	Main plugin = Main.getPlugin(Main.class);
 	Set<UUID> delay = new HashSet<UUID>();
-	
+
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        plugin.getPacketHandler().listen(event.getPlayer());
+    }
+    
 	@EventHandler
 	public void onLogout(PlayerQuitEvent event) {
 		Player player = event.getPlayer();
 		UUID uuid = player.getUniqueId();
 		plugin.returnInventoryMap().remove(uuid);
+		if (plugin.returnRopeMap().containsKey(uuid) && (Bukkit.getEntity(plugin.returnRopeMap().get(uuid)) != null)) {
+			Bukkit.getEntity(plugin.returnRopeMap().get(uuid)).remove();
+		}
 		plugin.returnRopeMap().remove(uuid); 
+        plugin.getPacketHandler().silence(event.getPlayer());
 	}
 	
 	@EventHandler
 	public void onEntityDamageByEntity(EntityDamageByEntityEvent event) {
 		if (event.getEntity() instanceof Vex) {
 			Vex vex = (Vex) event.getEntity();
-			if ((vex.getCustomName() != null) && vex.getCustomName().equals("Rope") && !vex.hasAI()) {
-				if (event.getDamager() instanceof Player) {
-					Player player = (Player)event.getDamager();
-					if (player.getInventory().getItemInMainHand().equals(new ItemStack(Material.POISONOUS_POTATO))) {
-						vex.remove();
-						return;
-					}
-				}
+			if (plugin.returnFullMap().containsKey(vex.getUniqueId()) || plugin.returnFullMap().containsValue(vex.getUniqueId())) {
 				event.setCancelled(true);
 			}
 		}
@@ -68,7 +75,7 @@ public class EventsManager implements Listener {
 	public void onEntityDamage(EntityDamageEvent event) {
 		if (event.getEntity() instanceof Vex) {
 			Vex vex = (Vex) event.getEntity();
-			if ((vex.getCustomName() != null) && vex.getCustomName().equals("Rope") && !vex.hasAI()) {
+			if (plugin.returnFullMap().containsKey(vex.getUniqueId()) || plugin.returnFullMap().containsValue(vex.getUniqueId())) {
 				event.setCancelled(true);
 			}
 		}
@@ -78,7 +85,7 @@ public class EventsManager implements Listener {
 	public void onEntityFire(EntityCombustEvent event) {
 		if (event.getEntity() instanceof Vex) {
 			Vex vex = (Vex) event.getEntity();
-			if ((vex.getCustomName() != null) && vex.getCustomName().equals("Rope") && !vex.hasAI()) {
+			if (plugin.returnFullMap().containsKey(vex.getUniqueId()) || plugin.returnFullMap().containsValue(vex.getUniqueId())) {
 				event.setCancelled(true);
 			}
 		}
@@ -88,7 +95,7 @@ public class EventsManager implements Listener {
 	public void onEntityInteract(PlayerInteractEntityEvent event) {
 		if (event.getRightClicked() instanceof Vex) {
 			Vex vex = (Vex) event.getRightClicked();
-			if ((vex.getCustomName() != null) && vex.getCustomName().equals("Rope") && !vex.hasAI()) {
+			if (plugin.returnFullMap().containsKey(vex.getUniqueId()) || plugin.returnFullMap().containsValue(vex.getUniqueId())) {
 				CustomInventory i = new CustomInventory();
 				i.createInventory(event.getPlayer(), vex);
 				
@@ -127,37 +134,45 @@ public class EventsManager implements Listener {
 				}else if ( !item.hasItemMeta()){
 					player.sendMessage("Clicked something without meta!");
 					return;
-				}else if (item.getItemMeta().getDisplayName().equals(ChatColor.WHITE + "Move entity")){
+				}
+				String name = item.getItemMeta().getDisplayName();
+				if (name.contains("Move Entity")){
+					player.sendMessage("ping");
 					player.closeInventory();
 					ConversationFactory cf = new ConversationFactory(plugin);
 					MoveConversation posconv = new MoveConversation();
 					posconv.importData((Vex) Bukkit.getEntity(plugin.returnInventoryMap().get(player.getUniqueId())), player);
 					Conversation conv = cf.withFirstPrompt(posconv).withLocalEcho(true).buildConversation(player);
 					conv.begin();
-				}else if (item.getItemMeta().getDisplayName().equals(ChatColor.RED + "Remove Entity")) {
+				}else if (name.equals(ChatColor.RED + "Remove Entity")) {
 					player.closeInventory();
 					Vex vex = (Vex) Bukkit.getEntity(plugin.returnInventoryMap().get(player.getUniqueId()));
 					Vex otherVex;
-					if (vex.isLeashed()) {
-						otherVex = (Vex) vex.getLeashHolder();
-						otherVex.remove();
+					if (plugin.returnFullMap().containsKey(vex.getUniqueId())) {
+						otherVex = (Vex) Bukkit.getEntity(plugin.returnFullMap().get(vex.getUniqueId()));
+						plugin.returnFullMap().remove(vex.getUniqueId());
 					}else {
-						List<Entity> list = vex.getNearbyEntities(50,50,50);
-						for (Entity entity: list) {
-							if (entity instanceof Vex) {
-								Vex oldVex = (Vex) entity;
-								if (oldVex.isLeashed()) {
-									if (oldVex.getLeashHolder().getUniqueId().equals(vex.getUniqueId())) {
-										oldVex.remove();
-										break;
-									}
-								}
+						UUID vexUUID = vex.getUniqueId();
+						UUID otherVexUUID = null;
+						for (Entry<UUID, UUID> uuid : plugin.returnFullMap().entrySet()) {
+							if (Objects.equals(vexUUID, uuid.getValue())) {
+								otherVexUUID = uuid.getKey();
 							}
+						}
+						plugin.returnFullMap().remove(otherVexUUID);
+						if (otherVexUUID != null) {
+							otherVex = (Vex) Bukkit.getEntity(otherVexUUID);
+						}else {
+							player.sendMessage(ChatColor.RED + "Something weird is going on...");
+							vex.remove();
+							return;
 						}
 					}
 					vex.remove();
+					otherVex.remove();
+				}else {
+					player.sendMessage("pong");
 				}
-			
 			}
 		}
 	}
@@ -174,59 +189,36 @@ public class EventsManager implements Listener {
 		if (player.getInventory().getItemInMainHand().isSimilar(tool)) {
 			if (!delay.contains(player.getUniqueId())) {
 				delay.add(player.getUniqueId());
+				Location loc = null;
+				try {
+					loc = event.getClickedBlock().getLocation().clone();
+				} catch(NullPointerException e){
+					player.sendMessage(ChatColor.RED + "Something went wrong trying to find the block you right clicked");
+					return;
+				}
+				loc.add(0.5, 1, 0.5);
+				Vex vex = spawnVex(loc);
 				
-				if (!plugin.returnRopeMap().containsKey(player.getUniqueId())) {
-					player.sendMessage(ChatColor.GOLD + "First entity placed");
-					Location loc = null;
-					try {
-						loc = event.getClickedBlock().getLocation().clone();
-					} catch(NullPointerException e){
-						player.sendMessage(ChatColor.RED + "Something went wrong trying to find the block you right clicked");
-						return;
-					}
+				if (plugin.returnRopeMap().containsKey(player.getUniqueId()) && (Bukkit.getEntity(plugin.returnRopeMap().get(player.getUniqueId()))!= null)) {
+					Vex parentVex = (Vex) Bukkit.getEntity(plugin.returnRopeMap().get(player.getUniqueId()));
 					
-					loc.add(0.5, 1, 0.5);
-					Vex vex = (Vex) loc.getWorld().spawnEntity(loc, EntityType.VEX);
-					vex.setAI(false);
-					vex.setInvulnerable(true);
-					vex.setCustomName("Rope");
-					vex.setSilent(true);
-					vex.getEquipment().setItemInMainHand(new ItemStack(Material.STICK));
-					PotionEffect invisible = new PotionEffect(PotionEffectType.INVISIBILITY, 999999999, 1, false, false);
-					vex.addPotionEffect(invisible);
+					player.sendMessage(ChatColor.GOLD + "Rope created!");
 					
-					plugin.returnRopeMap().put(player.getUniqueId(), vex.getUniqueId());
-				}else {
-
-					Vex oldVex = (Vex) Bukkit.getEntity(plugin.returnRopeMap().get(player.getUniqueId()));
-					if (oldVex != null) {
-						Location loc = null;
-						try {
-							loc = event.getClickedBlock().getLocation().clone();
-						} catch(NullPointerException e){
-							player.sendMessage(ChatColor.RED + "Something went wrong trying to find the block you right clicked");
-							return;
+					Entity vexparent = ((CraftEntity) parentVex).getHandle();
+					Entity vexchild = ((CraftEntity) vex).getHandle();
+					double radius = 64;
+					PacketPlayOutAttachEntity ppoae = new PacketPlayOutAttachEntity(vexchild, vexparent);
+					for (org.bukkit.entity.Entity e : loc.getWorld().getNearbyEntities(loc, radius, radius, radius)) {
+						if (e instanceof Player) {
+							((CraftPlayer) e).getHandle().playerConnection.sendPacket(ppoae);
 						}
-						
-						loc.add(0.5, 1, 0.5);
-						Vex vex = (Vex) loc.getWorld().spawnEntity(loc, EntityType.VEX);
-						vex.setAI(false);
-						vex.setInvulnerable(true);
-						vex.setCustomName("Rope");
-						vex.setSilent(true);
-						vex.getEquipment().setItemInMainHand(new ItemStack(Material.STICK));
-						vex.getEquipment().setItemInMainHand(null);
-						PotionEffect invisible = new PotionEffect(PotionEffectType.INVISIBILITY, 999999999, 1, false, false);
-						vex.addPotionEffect(invisible);
-	
-						player.sendMessage(ChatColor.GOLD + "Second entity placed");
-						vex.setLeashHolder(oldVex);
-						
-						plugin.returnRopeMap().remove(player.getUniqueId());
-					}else {
-						player.sendMessage("Something happened to the first source. Cancelling.");
-						plugin.returnRopeMap().remove(player.getUniqueId());
 					}
+					plugin.returnFullMap().put(parentVex.getUniqueId(), vex.getUniqueId());
+					
+					plugin.returnRopeMap().remove(player.getUniqueId());
+				}else {
+					player.sendMessage(ChatColor.GOLD + "First entity for the rope placed!");
+					plugin.returnRopeMap().put(player.getUniqueId(), vex.getUniqueId());
 				}
 				new BukkitRunnable() {
 					public void run() {
@@ -235,5 +227,22 @@ public class EventsManager implements Listener {
 				}.runTaskLater(this.plugin, 5);
 			}
 		}
+	}
+
+	private Vex spawnVex(Location loc) {
+		Vex vex = (Vex) loc.getWorld().spawnEntity(loc, EntityType.VEX);
+		vex.setAI(false);
+		vex.setCustomName("Rope");
+		vex.setSilent(true);
+		PotionEffect invisible = new PotionEffect(PotionEffectType.INVISIBILITY, 999999999, 1, false, false);
+		vex.addPotionEffect(invisible);
+
+		new BukkitRunnable() {
+			public void run() {
+				vex.getEquipment().setItemInMainHand(null);
+				vex.getEquipment().setItemInMainHand(new ItemStack(Material.AIR));
+			}
+		}.runTaskLaterAsynchronously(plugin, 1);
+		return vex;
 	}
 }

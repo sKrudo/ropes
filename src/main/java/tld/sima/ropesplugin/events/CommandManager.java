@@ -1,4 +1,4 @@
-package tld.sima.ropesplugin;
+package tld.sima.ropesplugin.events;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

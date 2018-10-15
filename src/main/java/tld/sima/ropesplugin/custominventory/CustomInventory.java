@@ -39,10 +39,10 @@ public class CustomInventory {
 		Inventory i = plugin.getServer().createInventory(null, 9, ChatColor.DARK_BLUE + "Rope Entity Menu");
 		
 		Location loc = vex.getLocation();
-		ItemStack location = createItem(new ItemStack(Material.STONE), ChatColor.WHITE + "Move entity", ChatColor.GRAY + "Current Location: " + ChatColor.WHITE + loc.getX() + " " + loc.getY() + " " + loc.getZ(), true);
+		ItemStack location = createItem(new ItemStack(Material.STONE), ChatColor.WHITE + "Move Entity", ChatColor.GRAY + "Current Location: " + ChatColor.WHITE + loc.getX() + " " + loc.getY() + " " + loc.getZ(), true);
 		i.setItem(0, location);
 		
-		ItemStack removeentity = createItem(new ItemStack(Material.SKULL_ITEM, 1, (short) 0), ChatColor.RED + "Remove Entity", "", false);
+		ItemStack removeentity = createItem(new ItemStack(Material.SKELETON_SKULL, 1), ChatColor.RED + "Remove Entity", "", false);
 		i.setItem(8, removeentity);
 		
 		player.openInventory(i);

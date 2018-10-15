@@ -1,6 +1,7 @@
 name: RopesPlugin
 main: tld.sima.ropesplugin.Main
 version: 0.1
+api-version: 1.13
 author: Simon A
 description: A plugin that allows users to deploy ropes
 
