@@ -6,13 +6,17 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import net.minecraft.server.v1_14_R1.PacketPlayOutAttachEntity;
+import net.minecraft.server.v1_14_R1.Entity;
+import net.minecraft.server.v1_14_R1.IInventory;
+
+
+
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.conversations.Conversation;
 import org.bukkit.conversations.ConversationFactory;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftEntity;
-import org.bukkit.craftbukkit.v1_13_R2.entity.CraftPlayer;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.Vex;
@@ -34,8 +38,11 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import net.md_5.bungee.api.ChatColor;
-import net.minecraft.server.v1_13_R2.Entity;
-import net.minecraft.server.v1_13_R2.PacketPlayOutAttachEntity;
+
+
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftEntity;
+import org.bukkit.craftbukkit.v1_14_R1.entity.CraftPlayer;
+
 import tld.sima.ropesplugin.Main;
 import tld.sima.ropesplugin.custominventory.CustomInventory;
 
@@ -119,14 +126,15 @@ public class EventsManager implements Listener {
 			}
 			Player player = (Player) event.getWhoClicked();
 			try {
-				if (open.getName() == null || event == null) {
+				if (open.getViewers() == null || open.getViewers().get(0) == null ||
+						open.getViewers().get(0).getName() == null || event == null) {
 					return;
 				}
 			}catch (NullPointerException e) {
 				return;
 			}
 			
-			if (open.getName().equals(mainMenu)) {
+			if (open.getViewers().get(0).getName().equals(mainMenu)) {
 				event.setCancelled(true);
 				if((item.equals(null)) || (item == null)){
 					player.sendMessage("Clicked something null!");

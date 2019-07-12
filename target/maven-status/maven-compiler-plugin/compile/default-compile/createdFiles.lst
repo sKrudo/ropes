@@ -1,6 +1,11 @@
+tld\sima\ropesplugin\events\CommandManager.class
+tld\sima\ropesplugin\events\PacketHandler$1.class
 tld\sima\ropesplugin\events\MoveConversation.class
+tld\sima\ropesplugin\events\PacketHandler$1$1.class
 tld\sima\ropesplugin\events\EventsManager.class
+tld\sima\ropesplugin\StorageManager.class
+tld\sima\ropesplugin\events\EventsManager$2.class
 tld\sima\ropesplugin\custominventory\CustomInventory.class
-tld\sima\ropesplugin\CommandManager.class
+tld\sima\ropesplugin\events\PacketHandler.class
 tld\sima\ropesplugin\events\EventsManager$1.class
 tld\sima\ropesplugin\Main.class

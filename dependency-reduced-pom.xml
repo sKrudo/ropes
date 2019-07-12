@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>tld.sima.ropes</groupId>
   <artifactId>ropes-plugin</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
+  <version>0.0.2-SNAPSHOT</version>
   <build>
     <resources>
       <resource>
@@ -38,7 +38,7 @@
     <dependency>
       <groupId>org.spigotmc</groupId>
       <artifactId>spigot-api</artifactId>
-      <version>1.13.2-R0.1-SNAPSHOT</version>
+      <version>1.14.2-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -70,7 +70,7 @@
     <dependency>
       <groupId>org.bukkit</groupId>
       <artifactId>bukkit</artifactId>
-      <version>1.13.2-R0.1-SNAPSHOT</version>
+      <version>1.14.2-R0.1-SNAPSHOT</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -95,16 +95,10 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.bukkit</groupId>
-      <artifactId>craftbukkit</artifactId>
-      <version>1.13.2-R0.1-SNAPSHOT</version>
-      <scope>provided</scope>
-    </dependency>
   </dependencies>
   <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
+    <maven.compiler.source>1.8</maven.compiler.source>
   </properties>
 </project>
 
